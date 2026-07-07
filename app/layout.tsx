@@ -4,8 +4,8 @@ import "./tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Walk as Score",
-  description: "Record a walk. Save it to Are.na as a score.",
+  title: "Walking Score",
+  description: "Record a walk. The walk becomes a score.",
 };
 
 export default function RootLayout({

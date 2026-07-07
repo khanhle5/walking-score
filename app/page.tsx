@@ -15,10 +15,9 @@ export default async function Home() {
 
   return (
     <main>
-      <h1>Walk as Score</h1>
+      <h1>Walking Score</h1>
       <p>
-        Record a walk. The route becomes a score —<br />a black line on a white
-        page, saved to Are.na.
+        Record a walk. The route becomes a score.
       </p>
       {username ? (
         <>
