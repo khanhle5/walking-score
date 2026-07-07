@@ -12,19 +12,30 @@ export interface XY {
   y: number;
 }
 
+// A recorded point: position in meters from the first fix, time in seconds from
+// the first fix. Space and time are both normalized to the walk's own origin.
+export interface TimedXY extends XY {
+  t: number;
+}
+
 const EARTH_RADIUS_M = 6371008.8;
 const DEG = Math.PI / 180;
 
-// Equirectangular projection anchored at the first point. Walks span a few km at
+// Equirectangular projection anchored at an origin point. Walks span a few km at
 // most, where this is accurate to well under a meter — no need for anything fancier.
-export function toLocalXY(points: LatLng[]): XY[] {
-  if (points.length === 0) return [];
-  const origin = points[0];
+// The recorder projects each fix as it arrives and discards the lat/lng immediately.
+export function makeProjector(origin: LatLng): (p: LatLng) => XY {
   const cosLat = Math.cos(origin.lat * DEG);
-  return points.map((p) => ({
+  return (p) => ({
     x: (p.lng - origin.lng) * DEG * cosLat * EARTH_RADIUS_M,
     y: (p.lat - origin.lat) * DEG * EARTH_RADIUS_M,
-  }));
+  });
+}
+
+export function toLocalXY(points: LatLng[]): XY[] {
+  if (points.length === 0) return [];
+  const project = makeProjector(points[0]);
+  return points.map(project);
 }
 
 export function pathDistanceM(points: XY[]): number {

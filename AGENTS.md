@@ -37,11 +37,14 @@ its notation.
   values; regenerate after updating the package. Light theme only: the score is a
   black line on white and the site follows. Headings are normal weight (Are.na
   convention).
-- **No absolute location is ever stored.** GPS is used live to draw the line, but
-  before saving, points are converted to (x, y) offsets in meters from the walk's
-  start, north-up. Every walk lives in the same abstract space starting at (0,0) —
-  shape, scale, distance, and duration survive; where on Earth it happened does not.
-  Raw lat/lng never leaves the device.
+- **No absolute location is ever stored — space and time are both normalized.**
+  GPS is used live to draw the line, but before saving, points are converted to
+  (x, y) offsets in meters from the walk's first fix, north-up, and each point's
+  time is seconds from that first fix. Every walk lives in the same abstract frame
+  starting at (0, 0) and t=0 — shape, scale, distance, and rhythm (where you
+  lingered or hurried) survive; where on Earth and when on the clock do not
+  (only `started_at` carries calendar time, like a date on a drawing). Raw lat/lng
+  never leaves the device.
 
 ## Are.na API (v3) — what this app uses
 
@@ -99,15 +102,19 @@ point_count: 1355
 points_0: "<encoded polyline chunk>"  (see encoding below)
 points_1: "..."                       (chunk at ≤2000 chars; ~300 pts/chunk)
 points_chunks: 2
+times_0: "<encoded time chunk>"       (seconds from first fix, one per point)
+times_chunks: 1
 ```
 
-**Point encoding**: the Google polyline algorithm (delta + varint + base64-ish), but
-applied to (x, y) meter offsets from the walk's start at 0.1m precision instead of
-lat/lng at precision 5. North-up, x = east, y = north, first point always (0,0).
-We own both encoder and decoder, so this is just a spec detail — document it in code.
-~5–10 bytes/point; a multi-hour walk fits within 32KB. Downsample (min-distance
-threshold or Douglas-Peucker) before encoding if needed. Per-point timestamps are NOT
-stored in v1 — only start time + duration. Revisit if reperformance needs pacing data.
+**Encoding** (implemented in `lib/points.ts`): the Google polyline algorithm
+(delta + zigzag + base63 varint), applied to the walk's own normalized frame instead
+of lat/lng. Points are (x, y) meter offsets from the first fix at 0.1m precision,
+north-up, x = east, first point always (0, 0). Times are one value per point,
+seconds from the first fix at 0.1s precision, first always 0 — pacing survives in
+relative form for sonification/reperformance, with no clock time beyond `started_at`.
+We own both encoder and decoder, so this is just a spec detail — documented in code.
+~5–10 bytes/point for positions plus ~1–2 for times; a multi-hour walk fits within
+32KB. Downsample (min-distance threshold or Douglas-Peucker) before encoding if needed.
 
 ## Architecture
 
@@ -142,20 +149,48 @@ art project.
 
 ## Build plan
 
-1. **Scaffold**: `create-next-app` (TypeScript, App Router, no Tailwind unless we want it).
-2. **OAuth**: register app on are.na, env vars (`ARENA_CLIENT_ID`, `ARENA_CLIENT_SECRET`),
-   auth routes, cookie session, `/v3/me` to show who's signed in.
-3. **Recorder**: geolocation + wake lock + live canvas preview. Testable on desktop with
-   a fake-GPS dev mode (simulated point stream) since desktops don't move.
-4. **Renderer**: points → normalized path → offscreen canvas → PNG blob. Pure function,
-   unit-testable with recorded fixtures.
+1. ✅ **Scaffold**: `create-next-app` (TypeScript, App Router, no Tailwind).
+2. ✅ **OAuth**: registered on are.na; env vars in `.env.local`; auth routes; cookie
+   session; `/v3/me` on the landing page. Local dev runs `next dev --experimental-https`
+   because Are.na requires https redirect URIs.
+3. ✅ **Recorder** (`app/walk/recorder.tsx`): geolocation + wake lock + live canvas.
+   Fixes with accuracy >35m are dropped; fixes <3m from the last kept point are
+   dropped (GPS jitter). Dev-only "Simulate a walk" button streams fake fixes
+   through the same pipeline. Walk persists to localStorage every 10 points.
+4. ✅ **Renderer** (`lib/render.ts`): one `drawScore()` used by both the live preview
+   and the 2048×2048 PNG export (`renderScorePng`), so the preview is the artifact.
 5. **Upload**: presign → S3 PUT → create block with metadata → success screen linking
-   to the block.
+   to the block. (`/done` currently renders the PNG with a disabled upload button.)
 6. **Polish**: error states (GPS denied, walk too short, upload failure with retry —
    keep points in localStorage until confirmed uploaded), visual design.
 7. **Deploy**: Vercel, custom domain, register production redirect URI.
 
+## Future ideas
+
+- **Sonification — walks as playable scores (MIDI).** A prototype lives in
+  `lib/sonify.ts` (Play button on /done): harp-like — every recorded point is a
+  plucked note (triangle osc, fast attack, ~1.4s exponential decay), pitch = y over
+  ~3 octaves snapped to major pentatonic, stereo pan = x, walk time normalized to a
+  30s performance. Because the jitter filter records no points while standing
+  still, pauses in the walk are literal rests. Long walks are thinned to ≤240
+  notes. (An earlier prototype read the line as a continuous pitch glide — one
+  oscillator with `linearRampToValueAtTime` per point — easy to rebuild if the
+  contour reading is ever wanted.) Beyond that: a separate
+  small tool (or a page here) fetches blocks from the channel, decodes `points_*`
+  metadata, and maps geometry to music — e.g. y (north/south) → pitch and cumulative
+  distance → time, or turn angle → interval and segment length → note duration.
+  MIDI generation is easy in JS (SMF is simple; e.g. midi-writer-js), and Web Audio
+  could play a walk right on /done. Works retroactively on every walk ever saved,
+  which is the point of storing point data. Time is normalized like space (`times_*`,
+  seconds from first fix), so the walker's pacing can drive rhythm/tempo, and a
+  performance can stretch a walk to any duration — the score doesn't dictate the
+  length of the performance.
+
 ## Development notes
+
+- **Package manager: yarn** (yarn.lock; package-lock.json was removed — don't
+  reintroduce it). Node is pinned to 22.18.0 via `.tool-versions` (asdf) because
+  yarn enforces dependency engine ranges that npm ignored.
 
 - Real GPS testing requires HTTPS on a phone — use `vercel dev`/preview deploys or
   a tunnel (localhost is exempt from the HTTPS rule but not reachable from a phone;

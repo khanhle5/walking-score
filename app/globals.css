@@ -71,3 +71,32 @@ main {
   padding: var(--space-4);
   text-align: center;
 }
+
+.button {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-4);
+  background: var(--foreground);
+  color: var(--background);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-6);
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: var(--gray4);
+  cursor: default;
+}
+
+.button--ghost {
+  background: none;
+  color: var(--foreground);
+  border: 1px solid var(--gray3);
+}
+
+/* The live canvas and the finished score preview. */
+.score-canvas {
+  width: min(80vw, 420px);
+  aspect-ratio: 1;
+  border: 1px solid var(--gray2);
+}
