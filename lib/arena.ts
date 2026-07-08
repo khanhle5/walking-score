@@ -2,10 +2,12 @@ export const ARENA_API = "https://api.are.na/v3";
 export const ARENA_AUTHORIZE_URL = "https://www.are.na/oauth/authorize";
 export const ARENA_TOKEN_URL = "https://api.are.na/v3/oauth/token";
 
+// Real /v3/me shape (verified): display name is `name`, URL handle is `slug`.
+// There is no `username` field.
 export interface ArenaUser {
   id: number;
   slug: string;
-  username: string;
+  name: string;
 }
 
 export async function arenaFetch<T>(

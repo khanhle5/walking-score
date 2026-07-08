@@ -6,10 +6,10 @@ import WalkGallery from "./walk-gallery";
 
 export default async function Home() {
   const token = await getToken();
-  let username: string | null = null;
+  let name: string | null = null;
   if (token) {
     try {
-      username = (await getCurrentUser(token)).username;
+      name = (await getCurrentUser(token)).name;
     } catch {
       // Stale or revoked token — treat as signed out.
     }
@@ -17,7 +17,7 @@ export default async function Home() {
 
   // The walks channel is private, so the gallery is only shown when signed in.
   let walks: GalleryWalk[] = [];
-  if (username) {
+  if (name) {
     try {
       walks = await fetchWalks();
     } catch {
@@ -31,9 +31,9 @@ export default async function Home() {
       <p>
         Record a walk. The route becomes a score.
       </p>
-      {username ? (
+      {name ? (
         <>
-          <p className="label">Signed in as {username}</p>
+          <p className="label">Signed in as {name}</p>
           <Link href="/walk">Start a walk →</Link>
           <WalkGallery walks={walks} />
         </>

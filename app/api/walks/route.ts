@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let walker: { username: string; slug: string };
+  let walker: { name: string; slug: string };
   try {
     walker = await getCurrentUser(userToken);
   } catch {
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         value: `https://s3.amazonaws.com/arena_images-temp/${file.key}`,
         title: `Walk — ${startedAt.slice(0, 10)}`,
-        description: `A walk by [${walker.username}](https://www.are.na/${walker.slug})`,
+        description: `A walk by [${walker.name}](https://www.are.na/${walker.slug})`,
         alt_text: `A ${formatDistance(distanceM)}, ${formatDuration(durationS)} walk drawn as a single black line on a white background`,
         metadata,
         channels: [{ id: channel }],
