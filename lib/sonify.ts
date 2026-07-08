@@ -60,8 +60,18 @@ export function playWalk(points: TimedXY[], durationS = 30): Performance | null 
     quantize(spanY > 0 ? MIDI_LOW + ((y - minY) / spanY) * (MIDI_HIGH - MIDI_LOW) : (MIDI_LOW + MIDI_HIGH) / 2);
   const toPan = (x: number) => (spanX > 0 ? ((x - minX) / spanX) * 2 - 1 : 0);
 
+  // iOS mutes Web Audio when the ringer switch is on silent unless the audio
+  // session is declared as playback (supported iOS 17+; harmless elsewhere).
+  const nav = navigator as Navigator & { audioSession?: { type: string } };
+  try {
+    if (nav.audioSession) nav.audioSession.type = "playback";
+  } catch {
+    // Older iOS — the ringer switch wins; nothing we can do from JS.
+  }
+
   // Must be constructed inside a user gesture on iOS.
   const ctx = new AudioContext();
+  if (ctx.state === "suspended") void ctx.resume();
   const master = ctx.createGain();
   master.gain.value = 0.6;
   master.connect(ctx.destination);

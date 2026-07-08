@@ -4,14 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistance, formatDuration } from "@/lib/format";
+import { encodePoints, encodeTimes } from "@/lib/points";
 import { renderScorePng } from "@/lib/render";
 import { playWalk, type Performance } from "@/lib/sonify";
 import { clearWalk, loadWalk, type Walk } from "@/lib/walk-store";
+
+type SaveState =
+  | { s: "idle" }
+  | { s: "saving" }
+  | { s: "saved"; url: string }
+  | { s: "error"; message: string };
 
 export default function DonePage() {
   const router = useRouter();
   const [walk, setWalk] = useState<Walk | null | undefined>(undefined);
   const [imgUrl, setImgUrl] = useState<string | null>(null);
+  const [pngBlob, setPngBlob] = useState<Blob | null>(null);
+  const [save, setSave] = useState<SaveState>({ s: "idle" });
   const [playing, setPlaying] = useState(false);
   const performanceRef = useRef<Performance | null>(null);
   const playTimeoutRef = useRef<number | null>(null);
@@ -36,6 +45,7 @@ export default function DonePage() {
       renderScorePng(w.points).then((blob) => {
         url = URL.createObjectURL(blob);
         setImgUrl(url);
+        setPngBlob(blob);
       });
       return () => {
         if (url) URL.revokeObjectURL(url);
@@ -70,9 +80,52 @@ export default function DonePage() {
         {new Date(walk.startedAt).toLocaleDateString()} · {formatDuration(durationS)} ·{" "}
         {formatDistance(walk.distanceM)} · {walk.points.length} points
       </p>
-      <button className="button" disabled title="Upload coming next">
-        Save to Are.na
-      </button>
+      {save.s === "saved" ? (
+        <>
+          <p className="label">Saved to Are.na</p>
+          <a className="button" href={save.url} target="_blank" rel="noreferrer">
+            View on Are.na →
+          </a>
+        </>
+      ) : (
+        <button
+          className="button"
+          disabled={!pngBlob || save.s === "saving"}
+          onClick={async () => {
+            if (!pngBlob) return;
+            setSave({ s: "saving" });
+            const fd = new FormData();
+            fd.append("image", pngBlob, "walk.png");
+            fd.append("startedAt", walk.startedAt);
+            fd.append("endedAt", walk.endedAt ?? "");
+            fd.append("distanceM", String(walk.distanceM));
+            fd.append("pointCount", String(walk.points.length));
+            fd.append("points", encodePoints(walk.points));
+            // Walks recorded before times existed have no t — skip the stream.
+            const hasTimes = walk.points.every((p) => Number.isFinite(p.t));
+            fd.append("times", hasTimes ? encodeTimes(walk.points.map((p) => p.t)) : "");
+            try {
+              const res = await fetch("/api/walks", { method: "POST", body: fd });
+              const body = await res.json().catch(() => null);
+              if (!res.ok) {
+                setSave({ s: "error", message: body?.error ?? `Upload failed (${res.status})` });
+                return;
+              }
+              clearWalk();
+              setSave({ s: "saved", url: body.url });
+            } catch {
+              setSave({ s: "error", message: "Network error — your walk is still on this device, try again" });
+            }
+          }}
+        >
+          {save.s === "saving" ? "Saving…" : "Save to Are.na"}
+        </button>
+      )}
+      {save.s === "error" && (
+        <p className="label" role="alert">
+          {save.message}
+        </p>
+      )}
       <button
         className="button button--ghost"
         onClick={() => {
@@ -100,7 +153,7 @@ export default function DonePage() {
           router.push("/walk");
         }}
       >
-        Discard
+        {save.s === "saved" ? "Walk again" : "Discard"}
       </button>
     </main>
   );

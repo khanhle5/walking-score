@@ -119,7 +119,13 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 ## Architecture
 
 - `app/` — Next.js App Router.
-  - `/` — landing: what this is, sign-in button.
+  - `/` — landing: what this is, sign-in button. When signed in, also the gallery:
+    `lib/walks.ts` reads the private channel server-side (service token) and
+    rebuilds every walk from block metadata; `app/walk-gallery.tsx` redraws each
+    score from decoded points and plays them (one at a time). Walks without a
+    `times_*` stream play at uniform pace. Gallery is signed-in-only because the
+    channel is private — flipping it public is removing one condition in
+    `app/page.tsx`. Currently reads one page (100 most recent walks).
   - `/walk` — the recorder: big start/stop, live canvas drawing the line as you walk.
   - `/done` — preview the rendered score, confirm → upload → link to the block on Are.na.
   - `app/api/auth/*` — OAuth redirect + callback (code→token exchange, sets cookie).
@@ -133,9 +139,15 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 - **Rendering**: project lat/lng with a simple equirectangular projection scaled by
   cos(mean latitude), normalize to fit a square canvas with margins, stroke a single
   black round-capped line on white. Export at 2048×2048 PNG. No map, no labels.
-- **Where blocks go**: a shared community channel (e.g. `walk-as-score`) — must be
-  open/collaborative so any authenticated member can connect to it. Optionally also
-  let the person pick one of their own channels.
+- **Where blocks go**: a shared community channel that is **private for now**, which
+  means members' own OAuth tokens cannot post into it. Uploads therefore go through
+  `app/api/walks/route.ts`: the client renders the PNG and sends it (plus the
+  encoded point/time streams) to our server, which presigns, PUTs to S3, and
+  creates the block using `ARENA_SERVICE_TOKEN` — a personal access token from the
+  channel-owning account. The user's OAuth token gates the endpoint and provides
+  attribution (`walker` metadata key + a description crediting them). If the
+  channel goes open later, this can flip to client-side creation with the user's
+  own token (blocks would then be authored by the walker, not the service account).
 
 ## Privacy
 
@@ -159,8 +171,11 @@ art project.
    through the same pipeline. Walk persists to localStorage every 10 points.
 4. ✅ **Renderer** (`lib/render.ts`): one `drawScore()` used by both the live preview
    and the 2048×2048 PNG export (`renderScorePng`), so the preview is the artifact.
-5. **Upload**: presign → S3 PUT → create block with metadata → success screen linking
-   to the block. (`/done` currently renders the PNG with a disabled upload button.)
+5. ✅ **Upload** (`app/api/walks/route.ts`): client POSTs PNG + encoded streams →
+   server presigns, PUTs to S3, creates the block with metadata via the service
+   token into the private channel. Needs `ARENA_SERVICE_TOKEN` and
+   `ARENA_WALKS_CHANNEL` env vars (see .env.example). The walk stays in
+   localStorage until the upload succeeds.
 6. **Polish**: error states (GPS denied, walk too short, upload failure with retry —
    keep points in localStorage until confirmed uploaded), visual design.
 7. **Deploy**: Vercel, custom domain, register production redirect URI.

@@ -10,6 +10,7 @@ import { clearWalk, saveWalk } from "@/lib/walk-store";
 
 const MAX_ACCURACY_M = 35; // drop fixes with worse GPS accuracy
 const MIN_STEP_M = 3; // drop fixes closer than this to the last kept point (jitter)
+const ANCHOR_ACCURACY_M = 20; // don't start the walk until GPS has settled this far
 
 export default function Recorder() {
   const router = useRouter();
@@ -54,6 +55,10 @@ export default function Recorder() {
       if (accuracy !== null && accuracy > MAX_ACCURACY_M) return;
       let p: XY;
       if (!projectRef.current) {
+        // GPS drifts in a wandering cluster until the lock settles, which draws
+        // a knot/spiral at the start of the line — hold out for a tight fix
+        // before anchoring the walk.
+        if (accuracy !== null && accuracy > ANCHOR_ACCURACY_M) return;
         // First fix anchors the walk in space and time; lat/lng is not kept
         // beyond the projector, and t counts seconds from here.
         projectRef.current = makeProjector({ lat, lng });
