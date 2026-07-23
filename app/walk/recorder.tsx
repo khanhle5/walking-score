@@ -189,9 +189,9 @@ export default function Recorder() {
       <main>
         <h1>Walk</h1>
         <p>
-          The score is drawn live while you walk.
+          Take a walk and the route you take will become a score.
           <br />
-          Keep the screen on — recording stops if the phone sleeps.
+          (Keep your phone's screen on, the recording will stop if the it goes to sleep.)
         </p>
         {message && (
           <p className="label" role="status">
