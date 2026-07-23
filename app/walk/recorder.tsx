@@ -187,11 +187,10 @@ export default function Recorder() {
   if (!recording) {
     return (
       <main>
-        <h1>Walk</h1>
         <p>
-          Take a walk and the route you take will become a score.
+          Take a walk. The route you take will become a score.
           <br />
-          (Keep your phone's screen on, the recording will stop if the it goes to sleep.)
+          (Keep your phone's screen on, the recording will stop if it goes to sleep)
         </p>
         {message && (
           <p className="label" role="status">
