@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ScoreCanvas from "@/app/score-canvas";
 import { formatDistance, formatDuration } from "@/lib/format";
 import { encodePoints, encodeTimes } from "@/lib/points";
 import { renderScorePng } from "@/lib/render";
@@ -12,16 +13,16 @@ import { clearWalk, loadWalk, type Walk } from "@/lib/walk-store";
 type SaveState =
   | { s: "idle" }
   | { s: "saving" }
-  | { s: "saved"; url: string }
+  | { s: "saved"; url: string; id: number }
   | { s: "error"; message: string };
 
 export default function DonePage() {
   const router = useRouter();
   const [walk, setWalk] = useState<Walk | null | undefined>(undefined);
-  const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [pngBlob, setPngBlob] = useState<Blob | null>(null);
+  const [title, setTitle] = useState("");
   const [save, setSave] = useState<SaveState>({ s: "idle" });
-  const [playing, setPlaying] = useState(false);
+  const [performance, setPerformance] = useState<Performance | null>(null);
   const performanceRef = useRef<Performance | null>(null);
   const playTimeoutRef = useRef<number | null>(null);
 
@@ -30,7 +31,7 @@ export default function DonePage() {
     performanceRef.current = null;
     if (playTimeoutRef.current !== null) window.clearTimeout(playTimeoutRef.current);
     playTimeoutRef.current = null;
-    setPlaying(false);
+    setPerformance(null);
   };
 
   // Stop audio on unmount.
@@ -41,15 +42,7 @@ export default function DonePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable client-side, after mount
     setWalk(w);
     if (w && w.points.length > 1) {
-      let url: string | null = null;
-      renderScorePng(w.points).then((blob) => {
-        url = URL.createObjectURL(blob);
-        setImgUrl(url);
-        setPngBlob(blob);
-      });
-      return () => {
-        if (url) URL.revokeObjectURL(url);
-      };
+      renderScorePng(w.points).then(setPngBlob);
     }
   }, []);
 
@@ -72,10 +65,7 @@ export default function DonePage() {
   return (
     <main>
       <h1>Your score</h1>
-      {imgUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- blob URL of the exact PNG that uploads
-        <img src={imgUrl} alt="Your walk as a score" className="score-canvas" />
-      )}
+      <ScoreCanvas points={walk.points} performance={performance} className="score-canvas" />
       <p className="label">
         {new Date(walk.startedAt).toLocaleDateString()} · {formatDuration(durationS)} ·{" "}
         {formatDistance(walk.distanceM)} · {walk.points.length} points
@@ -83,43 +73,56 @@ export default function DonePage() {
       {save.s === "saved" ? (
         <>
           <p className="label">Saved to Are.na</p>
-          <a className="button" href={save.url} target="_blank" rel="noreferrer">
+          <Link className="button" href={`/walk/${save.id}`}>
+            View your walk →
+          </Link>
+          <a className="label" href={save.url} target="_blank" rel="noreferrer">
             View on Are.na →
           </a>
         </>
       ) : (
-        <button
-          className="button"
-          disabled={!pngBlob || save.s === "saving"}
-          onClick={async () => {
-            if (!pngBlob) return;
-            setSave({ s: "saving" });
-            const fd = new FormData();
-            fd.append("image", pngBlob, "walk.png");
-            fd.append("startedAt", walk.startedAt);
-            fd.append("endedAt", walk.endedAt ?? "");
-            fd.append("distanceM", String(walk.distanceM));
-            fd.append("pointCount", String(walk.points.length));
-            fd.append("points", encodePoints(walk.points));
-            // Walks recorded before times existed have no t — skip the stream.
-            const hasTimes = walk.points.every((p) => Number.isFinite(p.t));
-            fd.append("times", hasTimes ? encodeTimes(walk.points.map((p) => p.t)) : "");
-            try {
-              const res = await fetch("/api/walks", { method: "POST", body: fd });
-              const body = await res.json().catch(() => null);
-              if (!res.ok) {
-                setSave({ s: "error", message: body?.error ?? `Upload failed (${res.status})` });
-                return;
+        <>
+          <input
+            className="input"
+            maxLength={100}
+            placeholder="Title this walk (optional)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <button
+            className="button"
+            disabled={!pngBlob || save.s === "saving"}
+            onClick={async () => {
+              if (!pngBlob) return;
+              setSave({ s: "saving" });
+              const fd = new FormData();
+              fd.append("image", pngBlob, "walk.png");
+              fd.append("title", title.trim());
+              fd.append("startedAt", walk.startedAt);
+              fd.append("endedAt", walk.endedAt ?? "");
+              fd.append("distanceM", String(walk.distanceM));
+              fd.append("pointCount", String(walk.points.length));
+              fd.append("points", encodePoints(walk.points));
+              // Walks recorded before times existed have no t — skip the stream.
+              const hasTimes = walk.points.every((p) => Number.isFinite(p.t));
+              fd.append("times", hasTimes ? encodeTimes(walk.points.map((p) => p.t)) : "");
+              try {
+                const res = await fetch("/api/walks", { method: "POST", body: fd });
+                const body = await res.json().catch(() => null);
+                if (!res.ok) {
+                  setSave({ s: "error", message: body?.error ?? `Upload failed (${res.status})` });
+                  return;
+                }
+                clearWalk();
+                setSave({ s: "saved", url: body.url, id: body.id });
+              } catch {
+                setSave({ s: "error", message: "Network error — your walk is still on this device, try again" });
               }
-              clearWalk();
-              setSave({ s: "saved", url: body.url });
-            } catch {
-              setSave({ s: "error", message: "Network error — your walk is still on this device, try again" });
-            }
-          }}
-        >
-          {save.s === "saving" ? "Saving…" : "Save to Are.na"}
-        </button>
+            }}
+          >
+            {save.s === "saving" ? "Saving…" : "Save to Are.na"}
+          </button>
+        </>
       )}
       {save.s === "error" && (
         <p className="label" role="alert">
@@ -129,21 +132,18 @@ export default function DonePage() {
       <button
         className="button button--ghost"
         onClick={() => {
-          if (playing) {
+          if (performance) {
             stopPlayback();
             return;
           }
-          const performance = playWalk(walk.points);
-          if (!performance) return;
-          performanceRef.current = performance;
-          setPlaying(true);
-          playTimeoutRef.current = window.setTimeout(
-            stopPlayback,
-            (performance.durationS + 0.2) * 1000
-          );
+          const p = playWalk(walk.points);
+          if (!p) return;
+          performanceRef.current = p;
+          setPerformance(p);
+          playTimeoutRef.current = window.setTimeout(stopPlayback, (p.durationS + 0.2) * 1000);
         }}
       >
-        {playing ? "Stop" : "Play (30s)"}
+        {performance ? "Stop" : "Play (30s)"}
       </button>
       <button
         className="button button--ghost"

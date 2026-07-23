@@ -61,6 +61,21 @@ a {
   font-size: var(--font-size-2);
 }
 
+/* Body copy on the landing page — keep the measure readable on wide screens. */
+.copy {
+  max-width: 44ch;
+}
+
+/* Landing page: a centered column with left-aligned content. */
+.home {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
 main {
   flex: 1;
   display: flex;
@@ -73,14 +88,16 @@ main {
 }
 
 .button {
+  display: inline-block;
   font-family: var(--font-sans);
   font-size: var(--font-size-4);
   background: var(--foreground);
   color: var(--background);
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   padding: var(--space-2) var(--space-6);
   cursor: pointer;
+  text-decoration: none !important;
 }
 
 .button:disabled {
@@ -92,6 +109,19 @@ main {
   background: none;
   color: var(--foreground);
   border: 1px solid var(--gray3);
+}
+
+.input {
+  font-family: var(--font-mono);
+  font-variation-settings: "MONO" 100;
+  font-size: var(--font-size-3);
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--gray3);
+  border-radius: 0;
+  padding: var(--space-2) var(--space-3);
+  width: min(80vw, 420px);
+  text-align: center;
 }
 
 /* The live canvas and the finished score preview. */

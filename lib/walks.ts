@@ -7,6 +7,7 @@ import { arenaFetch } from "./arena";
 export interface GalleryWalk {
   id: number;
   url: string;
+  title: string;
   walker: string;
   startedAt: string;
   durationS: number;
@@ -17,11 +18,14 @@ export interface GalleryWalk {
 
 type BlockMetadata = Record<string, string | number | boolean | null>;
 
+interface WalkBlock {
+  id: number;
+  title?: string | null;
+  metadata?: BlockMetadata | null;
+}
+
 interface ContentsResponse {
-  data: {
-    id: number;
-    metadata?: BlockMetadata | null;
-  }[];
+  data: WalkBlock[];
 }
 
 function joinChunks(metadata: BlockMetadata, prefix: string): string {
@@ -31,6 +35,24 @@ function joinChunks(metadata: BlockMetadata, prefix: string): string {
     joined += String(metadata[`${prefix}_${i}`] ?? "");
   }
   return joined;
+}
+
+function toGalleryWalk(block: WalkBlock): GalleryWalk | null {
+  const m = block.metadata;
+  if (!m || m.app !== "walk-as-score") return null;
+  const points = joinChunks(m, "points");
+  if (!points) return null;
+  return {
+    id: block.id,
+    url: `https://www.are.na/block/${block.id}`,
+    title: String(block.title ?? ""),
+    walker: String(m.walker ?? ""),
+    startedAt: String(m.started_at ?? ""),
+    durationS: Number(m.duration_s ?? 0),
+    distanceM: Number(m.distance_m ?? 0),
+    points,
+    times: joinChunks(m, "times"),
+  };
 }
 
 export async function fetchWalks(): Promise<GalleryWalk[]> {
@@ -45,20 +67,21 @@ export async function fetchWalks(): Promise<GalleryWalk[]> {
 
   const walks: GalleryWalk[] = [];
   for (const block of res.data) {
-    const m = block.metadata;
-    if (!m || m.app !== "walk-as-score") continue;
-    const points = joinChunks(m, "points");
-    if (!points) continue;
-    walks.push({
-      id: block.id,
-      url: `https://www.are.na/block/${block.id}`,
-      walker: String(m.walker ?? ""),
-      startedAt: String(m.started_at ?? ""),
-      durationS: Number(m.duration_s ?? 0),
-      distanceM: Number(m.distance_m ?? 0),
-      points,
-      times: joinChunks(m, "times"),
-    });
+    const walk = toGalleryWalk(block);
+    if (walk) walks.push(walk);
   }
   return walks;
+}
+
+export async function getWalk(id: number): Promise<GalleryWalk | null> {
+  const token = process.env.ARENA_SERVICE_TOKEN;
+  if (!token) return null;
+
+  let block: WalkBlock;
+  try {
+    block = await arenaFetch<WalkBlock>(`/blocks/${id}`, token);
+  } catch {
+    return null;
+  }
+  return toGalleryWalk(block);
 }

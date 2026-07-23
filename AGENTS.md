@@ -139,15 +139,15 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 - **Rendering**: project lat/lng with a simple equirectangular projection scaled by
   cos(mean latitude), normalize to fit a square canvas with margins, stroke a single
   black round-capped line on white. Export at 2048×2048 PNG. No map, no labels.
-- **Where blocks go**: a shared community channel that is **private for now**, which
-  means members' own OAuth tokens cannot post into it. Uploads therefore go through
-  `app/api/walks/route.ts`: the client renders the PNG and sends it (plus the
-  encoded point/time streams) to our server, which presigns, PUTs to S3, and
-  creates the block using `ARENA_SERVICE_TOKEN` — a personal access token from the
-  channel-owning account. The user's OAuth token gates the endpoint and provides
-  attribution (`walker` metadata key + a description crediting them). If the
-  channel goes open later, this can flip to client-side creation with the user's
-  own token (blocks would then be authored by the walker, not the service account).
+- **Where blocks go**: a shared community channel that is **private for now** —
+  fine while the only people posting are Are.na team members, who can add to it.
+  Uploads go through `app/api/walks/route.ts`: the client renders the PNG and
+  sends it (plus the encoded point/time streams) to our server, which presigns,
+  PUTs to S3, and creates the block **with the walker's own OAuth token**, so
+  blocks are authored by the walker. `ARENA_SERVICE_TOKEN` (a personal access
+  token from the channel-owning account) is used only for reading the channel
+  server-side (`lib/walks.ts`) — the gallery and the public per-walk pages.
+  The `walker` metadata key + a description line still credit the walker.
 
 ## Privacy
 

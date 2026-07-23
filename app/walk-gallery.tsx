@@ -1,44 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { formatDistance } from "@/lib/format";
-import type { TimedXY } from "@/lib/geo";
-import { decodePoints, decodeTimes } from "@/lib/points";
-import { drawScore } from "@/lib/render";
 import { playWalk, type Performance } from "@/lib/sonify";
+import { toTimedPoints } from "@/lib/timed-points";
 import type { GalleryWalk } from "@/lib/walks";
-
-function toTimedPoints(walk: GalleryWalk): TimedXY[] {
-  const points = decodePoints(walk.points);
-  const times = walk.times ? decodeTimes(walk.times) : null;
-  // Walks without a time stream play at uniform pace.
-  return points.map((p, i) => ({ ...p, t: times?.[i] ?? i }));
-}
+import ScoreCanvas from "./score-canvas";
 
 function Tile({
   walk,
-  playing,
+  performance,
   onToggle,
 }: {
   walk: GalleryWalk;
-  playing: boolean;
+  performance: Performance | null;
   onToggle: () => void;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = canvas.clientWidth * dpr;
-    canvas.height = canvas.clientHeight * dpr;
-    const ctx = canvas.getContext("2d");
-    if (ctx) drawScore(ctx, decodePoints(walk.points), canvas.width, canvas.height);
-  }, [walk.points]);
-
+  const points = useMemo(() => toTimedPoints(walk), [walk]);
   return (
     <figure className="tile">
-      <canvas ref={canvasRef} className="tile-canvas" />
+      <Link href={`/walk/${walk.id}`}>
+        <ScoreCanvas points={points} performance={performance} className="tile-canvas" />
+      </Link>
       <figcaption className="label">
         <a href={walk.url} target="_blank" rel="noreferrer">
           {walk.walker}
@@ -47,7 +31,7 @@ function Tile({
         {formatDistance(walk.distanceM)}
         {" · "}
         <button className="tile-play" onClick={onToggle}>
-          {playing ? "stop" : "play"}
+          {performance ? "stop" : "play"}
         </button>
       </figcaption>
     </figure>
@@ -55,16 +39,16 @@ function Tile({
 }
 
 export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const performanceRef = useRef<Performance | null>(null);
+  const [playing, setPlaying] = useState<{ id: number; performance: Performance } | null>(null);
+  const playingRef = useRef<Performance | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
   const stopAll = () => {
-    performanceRef.current?.stop();
-    performanceRef.current = null;
+    playingRef.current?.stop();
+    playingRef.current = null;
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
-    setPlayingId(null);
+    setPlaying(null);
   };
 
   // Stop audio on unmount.
@@ -73,13 +57,13 @@ export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
   if (walks.length === 0) return null;
 
   const toggle = (walk: GalleryWalk) => {
-    const wasPlaying = playingId === walk.id;
+    const wasPlaying = playing?.id === walk.id;
     stopAll();
     if (wasPlaying) return;
     const performance = playWalk(toTimedPoints(walk));
     if (!performance) return;
-    performanceRef.current = performance;
-    setPlayingId(walk.id);
+    playingRef.current = performance;
+    setPlaying({ id: walk.id, performance });
     timeoutRef.current = window.setTimeout(stopAll, (performance.durationS + 0.2) * 1000);
   };
 
@@ -89,7 +73,7 @@ export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
         <Tile
           key={walk.id}
           walk={walk}
-          playing={playingId === walk.id}
+          performance={playing?.id === walk.id ? playing.performance : null}
           onToggle={() => toggle(walk)}
         />
       ))}

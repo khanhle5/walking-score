@@ -1,4 +1,4 @@
-import type { TimedXY } from "./geo";
+import type { TimedXY, XY } from "./geo";
 
 // Prototype sonification: the walk as a harp. Each recorded point is a plucked
 // note — pitch from y (north = up, ~3 octaves, snapped to a pentatonic scale so
@@ -34,7 +34,25 @@ function quantize(midi: number): number {
 
 export interface Performance {
   durationS: number;
+  /** 0..1 through the note-scheduling sweep; holds at 1 during the decay tail. */
+  progress: () => number;
   stop: () => void;
+}
+
+// Where along the walk a performance is at `progress` (0..1) — the inverse of
+// the scheduler's linear time mapping, lerped within the bracketing segment.
+export function walkPositionAt(points: TimedXY[], progress: number): XY {
+  const last = points[points.length - 1];
+  const t = Math.min(1, Math.max(0, progress)) * last.t;
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].t < t) continue;
+    const a = points[i - 1];
+    const b = points[i];
+    const span = b.t - a.t;
+    const f = span > 0 ? (t - a.t) / span : 1;
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+  }
+  return { x: last.x, y: last.y };
 }
 
 export function playWalk(points: TimedXY[], durationS = 30): Performance | null {
@@ -110,6 +128,8 @@ export function playWalk(points: TimedXY[], durationS = 30): Performance | null 
 
   return {
     durationS: durationS + DECAY_S,
+    progress: () =>
+      closed ? 1 : Math.min(1, Math.max(0, (ctx.currentTime - t0) / durationS)),
     stop: close,
   };
 }
