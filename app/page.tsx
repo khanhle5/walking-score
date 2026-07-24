@@ -36,13 +36,7 @@ export default async function Home() {
     <main className="home">
       <header className="home-header">
         <h1>walking-score.are.na</h1>
-        {name ? (
-          <p className="label">Signed in as {name}</p>
-        ) : (
-          <a className="button" href="/api/auth/login">
-            Sign in with Are.na
-          </a>
-        )}
+        {name && <p className="label">Signed in as {name}</p>}
       </header>
       <p className="copy">
         The theme for this year&rsquo;s{" "}
@@ -64,6 +58,11 @@ export default async function Home() {
         For the community element of this year&rsquo;s edition, we&rsquo;d like
         you to take a walk. The route you take will become a score.
       </p>
+      {!name && (
+        <a className="button" href="/api/auth/login">
+          Sign in with Are.na to add your score
+        </a>
+      )}
       {name && canRecord && (
         <Link className="button button--blue" href="/walk">
           Start a walk →
