@@ -1,6 +1,6 @@
 import { arenaFetch } from "./arena";
 
-// Server-side only: reads the private walks channel with the service token and
+// Server-side only: reads the walks channel with the service token and
 // rebuilds each walk from block metadata (the image is never fetched — scores
 // are redrawn client-side from the decoded points).
 

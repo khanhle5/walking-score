@@ -22,14 +22,11 @@ export default async function Home() {
   // Recording is phone-only; dev mode stays open for the simulate-a-walk flow.
   const canRecord = isMobile || process.env.NODE_ENV === "development";
 
-  // The walks channel is private, so the gallery is only shown when signed in.
   let walks: GalleryWalk[] = [];
-  if (name) {
-    try {
-      walks = await fetchWalks();
-    } catch {
-      // Gallery is decorative — the page works without it.
-    }
+  try {
+    walks = await fetchWalks();
+  } catch {
+    // Gallery is decorative — the page works without it.
   }
 
   return (
@@ -74,7 +71,7 @@ export default async function Home() {
           phone to record a walk.
         </p>
       )}
-      {name && <WalkGallery walks={walks} />}
+      <WalkGallery walks={walks} />
     </main>
   );
 }

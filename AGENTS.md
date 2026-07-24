@@ -119,13 +119,12 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 ## Architecture
 
 - `app/` — Next.js App Router.
-  - `/` — landing: what this is, sign-in button. When signed in, also the gallery:
-    `lib/walks.ts` reads the private channel server-side (service token) and
+  - `/` — landing: what this is, sign-in button, and the gallery (shown to
+    everyone): `lib/walks.ts` reads the channel server-side (service token) and
     rebuilds every walk from block metadata; `app/walk-gallery.tsx` redraws each
     score from decoded points and plays them (one at a time). Walks without a
-    `times_*` stream play at uniform pace. Gallery is signed-in-only because the
-    channel is private — flipping it public is removing one condition in
-    `app/page.tsx`. Currently reads one page (100 most recent walks).
+    `times_*` stream play at uniform pace. Currently reads one page (100 most
+    recent walks).
   - `/walk` — the recorder: big start/stop, live canvas drawing the line as you walk.
   - `/done` — preview the rendered score, confirm → upload → link to the block on Are.na.
   - `app/api/auth/*` — OAuth redirect + callback (code→token exchange, sets cookie).
@@ -139,8 +138,8 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 - **Rendering**: project lat/lng with a simple equirectangular projection scaled by
   cos(mean latitude), normalize to fit a square canvas with margins, stroke a single
   black round-capped line on white. Export at 2048×2048 PNG. No map, no labels.
-- **Where blocks go**: a shared community channel that is **private for now** —
-  fine while the only people posting are Are.na team members, who can add to it.
+- **Where blocks go**: a shared community channel, now **open** (anyone signed
+  in can view and post into it).
   Uploads go through `app/api/walks/route.ts`: the client renders the PNG and
   sends it (plus the encoded point/time streams) to our server, which presigns,
   PUTs to S3, and creates the block **with the walker's own OAuth token**, so
