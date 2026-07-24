@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import ScoreCanvas from "@/app/score-canvas";
 import { formatDistance, formatDuration } from "@/lib/format";
 import { playWalk, type Performance } from "@/lib/sonify";
@@ -51,6 +52,9 @@ export default function WalkView({ walk }: { walk: GalleryWalk }) {
       <a className="label" href={walk.url} target="_blank" rel="noreferrer">
         View on Are.na →
       </a>
+      <Link className="button button--ghost" href="/">
+        ← Back to all scores
+      </Link>
     </main>
   );
 }
