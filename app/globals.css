@@ -76,6 +76,16 @@ a {
   text-align: left;
 }
 
+/* Title on the left, sign-in button or name on the right. */
+.home-header {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 /* Areal has no italic face — italics come from the slnt axis (see the
    @aredotna/tokens README). font-synthesis is off, so <em> alone won't slant. */
 .italic {

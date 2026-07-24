@@ -34,7 +34,16 @@ export default async function Home() {
 
   return (
     <main className="home">
-      <h1>walking-score.are.na</h1>
+      <header className="home-header">
+        <h1>walking-score.are.na</h1>
+        {name ? (
+          <p className="label">Signed in as {name}</p>
+        ) : (
+          <a className="button" href="/api/auth/login">
+            Sign in with Are.na
+          </a>
+        )}
+      </header>
       <p className="copy">
         The theme for this year&rsquo;s{" "}
         <a
@@ -52,43 +61,20 @@ export default async function Home() {
         </span>
       </p>
       <p className="copy">
-        Take a walk.
-        <br />
-        Keep your phone&rsquo;s screen on (the recording will stop if it goes
-        to sleep).
-        <br />
-        The route you take will become a score.
+        For the community element of this year&rsquo;s edition, we&rsquo;d like
+        you to take a walk. The route you take will become a score.
       </p>
-      {name ? (
-        <>
-          <p className="label">Signed in as {name}</p>
-          {canRecord ? (
-            <Link className="button button--blue" href="/walk">
-              Start a walk →
-            </Link>
-          ) : (
-            <p className="label copy">
-              You&apos;re on a computer — open this on your phone to record a walk.
-            </p>
-          )}
-        </>
-      ) : (
-        <>
-          <a className="button" href="/api/auth/login">
-            Sign in with Are.na
-          </a>
-          {!isMobile && (
-            <p className="label copy">
-              You&apos;re on a computer — visit on your phone to record a walk.
-            </p>
-          )}
-        </>
+      {name && canRecord && (
+        <Link className="button button--blue" href="/walk">
+          Start a walk →
+        </Link>
       )}
-      <p className="label copy">
-        Note: GPS coordinates are never saved. Before anything uploads, the
-        walk is scrubbed into an abstract coordinate system, which is measured
-        in meters starting from wherever you began.
-      </p>
+      {!isMobile && (
+        <p className="label copy">
+          You&apos;re on a computer — {name ? "open this" : "visit"} on your
+          phone to record a walk.
+        </p>
+      )}
       {name && <WalkGallery walks={walks} />}
     </main>
   );

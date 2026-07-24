@@ -188,9 +188,12 @@ export default function Recorder() {
     return (
       <main>
         <p>
-          Take a walk. The route you take will become a score.
+          Take a walk.
           <br />
-          (Keep your phone&rsquo;s screen on, the recording will stop if it goes to sleep)
+          Keep your phone&rsquo;s screen on (the recording will stop if it
+          goes to sleep).
+          <br />
+          The route you take will become a score.
         </p>
         {message && (
           <p className="label" role="status">
@@ -205,6 +208,11 @@ export default function Recorder() {
             Simulate a walk (dev)
           </button>
         )}
+        <p className="label copy">
+          Note: GPS coordinates are never saved. Before anything uploads, the
+          walk is scrubbed into an abstract coordinate system, which is
+          measured in meters starting from wherever you began.
+        </p>
       </main>
     );
   }
