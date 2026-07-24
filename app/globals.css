@@ -58,7 +58,7 @@ a {
 .label {
   font-family: var(--font-mono);
   font-variation-settings: "MONO" 100;
-  font-size: var(--font-size-2);
+  font-size: var(--font-size-1);
 }
 
 /* Body copy on the landing page — keep the measure readable on wide screens. */
@@ -74,6 +74,12 @@ a {
   align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
+}
+
+/* Areal has no italic face — italics come from the slnt axis (see the
+   @aredotna/tokens README). font-synthesis is off, so <em> alone won't slant. */
+.italic {
+  font-variation-settings: "slnt" -12;
 }
 
 main {
@@ -109,6 +115,11 @@ main {
   background: none;
   color: var(--foreground);
   border: 1px solid var(--gray3);
+}
+
+.button--blue {
+  background: var(--blue2);
+  color: var(--gray0);
 }
 
 .input {

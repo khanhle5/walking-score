@@ -190,7 +190,7 @@ export default function Recorder() {
         <p>
           Take a walk. The route you take will become a score.
           <br />
-          (Keep your phone's screen on, the recording will stop if it goes to sleep)
+          (Keep your phone&rsquo;s screen on, the recording will stop if it goes to sleep)
         </p>
         {message && (
           <p className="label" role="status">

@@ -30,7 +30,7 @@ its notation.
   npm), Are.na's design tokens. The Areal variable font is loaded via
   `next/font/local` in `lib/fonts.ts` (axes: `"MONO" 0–100` for sans→mono — use the
   `.mono` class — and `slnt` for italics). **Labels and metadata are set in the mono
-  axis** (`.mono`, usually with `--font-size-2`), matching are.na itself — think
+  axis** (`.label`, at `--font-size-1`), matching are.na itself — think
   walk stats, timestamps, "signed in as", captions. Body text stays sans. CSS custom properties in `app/tokens.css`
   are **generated** from the package by `npm run tokens`
   (`scripts/generate-tokens-css.mjs`) — never edit that file or hand-copy token

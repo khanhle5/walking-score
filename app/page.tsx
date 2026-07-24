@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/arena";
+import { isMobileUA } from "@/lib/device";
 import { getToken } from "@/lib/session";
 import { fetchWalks, type GalleryWalk } from "@/lib/walks";
 import WalkGallery from "./walk-gallery";
@@ -16,9 +17,10 @@ export default async function Home() {
     }
   }
 
-  // A hint, not a gate — recording wants a phone (GPS, walking with a screen).
   const ua = (await headers()).get("user-agent") ?? "";
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(ua);
+  const isMobile = isMobileUA(ua);
+  // Recording is phone-only; dev mode stays open for the simulate-a-walk flow.
+  const canRecord = isMobile || process.env.NODE_ENV === "development";
 
   // The walks channel is private, so the gallery is only shown when signed in.
   let walks: GalleryWalk[] = [];
@@ -36,8 +38,11 @@ export default async function Home() {
       {name ? (
         <>
           <p className="label">Signed in as {name}</p>
-          <Link href="/walk">Start a walk →</Link>
-          {!isMobile && (
+          {canRecord ? (
+            <Link className="button button--blue" href="/walk">
+              Start a walk →
+            </Link>
+          ) : (
             <p className="label copy">
               You&apos;re on a computer — open this on your phone to record a walk.
             </p>
@@ -55,13 +60,20 @@ export default async function Home() {
             >
               Are.na Annual
             </a>{" "}
-            is &ldquo;score&rdquo;
-            as in to secure an advantage; to gain points in a game; to keep
-            record or account; a cut, notch, or groove; a group of twenty; a
-            musical composition; a grudge.
+            is &ldquo;score&rdquo; as in{" "}
+            <span className="italic">
+              to secure an advantage; to gain points in a game; to keep record
+              or account; a cut, notch, or groove; a group of twenty; a musical
+              composition; a grudge.
+            </span>
           </p>
           <p className="copy">
-            For the community element of this years edition, we&rsquo;d like you to take a walk. The route you take will become a score.
+            Take a walk.
+            <br />
+            Keep your phone&rsquo;s screen on (the recording will stop if it
+            goes to sleep).
+            <br />
+            The route you take will become a score.
           </p>
           <a className="button" href="/api/auth/login">
             Sign in with Are.na
