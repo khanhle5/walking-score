@@ -10,15 +10,16 @@ export interface ArenaUser {
   name: string;
 }
 
+// Pass token: null for anonymous requests (public reads need no auth).
 export async function arenaFetch<T>(
   path: string,
-  token: string,
+  token: string | null,
   init: RequestInit = {}
 ): Promise<T> {
   const res = await fetch(`${ARENA_API}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "Content-Type": "application/json",
       ...init.headers,
     },

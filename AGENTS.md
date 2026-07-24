@@ -120,7 +120,7 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 
 - `app/` — Next.js App Router.
   - `/` — landing: what this is, sign-in button, and the gallery (shown to
-    everyone): `lib/walks.ts` reads the channel server-side (service token) and
+    everyone): `lib/walks.ts` reads the channel server-side (anonymously) and
     rebuilds every walk from block metadata; `app/walk-gallery.tsx` redraws each
     score from decoded points and plays them (one at a time). Walks without a
     `times_*` stream play at uniform pace. Currently reads one page (100 most
@@ -143,10 +143,10 @@ We own both encoder and decoder, so this is just a spec detail — documented in
   Uploads go through `app/api/walks/route.ts`: the client renders the PNG and
   sends it (plus the encoded point/time streams) to our server, which presigns,
   PUTs to S3, and creates the block **with the walker's own OAuth token**, so
-  blocks are authored by the walker. `ARENA_SERVICE_TOKEN` (a personal access
-  token from the channel-owning account) is used only for reading the channel
-  server-side (`lib/walks.ts`) — the gallery and the public per-walk pages.
-  The `walker` metadata key + a description line still credit the walker.
+  blocks are authored by the walker. Channel reads (`lib/walks.ts` — the
+  gallery and per-walk pages) are anonymous: public resources need no auth, so
+  there is no service token. The `walker` metadata key + a description line
+  still credit the walker.
 
 ## Privacy
 
@@ -171,10 +171,9 @@ art project.
 4. ✅ **Renderer** (`lib/render.ts`): one `drawScore()` used by both the live preview
    and the 2048×2048 PNG export (`renderScorePng`), so the preview is the artifact.
 5. ✅ **Upload** (`app/api/walks/route.ts`): client POSTs PNG + encoded streams →
-   server presigns, PUTs to S3, creates the block with metadata via the service
-   token into the private channel. Needs `ARENA_SERVICE_TOKEN` and
-   `ARENA_WALKS_CHANNEL` env vars (see .env.example). The walk stays in
-   localStorage until the upload succeeds.
+   server presigns, PUTs to S3, creates the block with metadata using the
+   walker's OAuth token. Needs the `ARENA_WALKS_CHANNEL` env var (see
+   .env.example). The walk stays in localStorage until the upload succeeds.
 6. **Polish**: error states (GPS denied, walk too short, upload failure with retry —
    keep points in localStorage until confirmed uploaded), visual design.
 7. **Deploy**: Vercel, custom domain, register production redirect URI.

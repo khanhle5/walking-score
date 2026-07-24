@@ -3,7 +3,7 @@ import { getWalk } from "@/lib/walks";
 import WalkView from "./walk-view";
 
 // Public: a walk's page is viewable by anyone with the URL (it renders
-// server-side via the service token).
+// server-side from an anonymous channel read).
 export default async function WalkDetailPage({ params }: PageProps<"/walk/[id]">) {
   const { id } = await params;
   const blockId = Number(id);

@@ -7,8 +7,7 @@ import { getToken } from "@/lib/session";
 // The client sends the rendered PNG + encoded streams here, and the server
 // does presign → S3 PUT → create block with the walker's own OAuth token, so
 // the block is authored by the walker. The channel is open, so any signed-in
-// walker can post into it; the service token is only used for reading
-// (lib/walks.ts).
+// walker can post into it; reads (lib/walks.ts) are anonymous.
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_TITLE_CHARS = 100;

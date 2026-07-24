@@ -1,8 +1,8 @@
 import { arenaFetch } from "./arena";
 
-// Server-side only: reads the walks channel with the service token and
-// rebuilds each walk from block metadata (the image is never fetched — scores
-// are redrawn client-side from the decoded points).
+// Server-side: reads the open walks channel (anonymously — public reads need
+// no auth) and rebuilds each walk from block metadata (the image is never
+// fetched — scores are redrawn client-side from the decoded points).
 
 export interface GalleryWalk {
   id: number;
@@ -56,13 +56,12 @@ function toGalleryWalk(block: WalkBlock): GalleryWalk | null {
 }
 
 export async function fetchWalks(): Promise<GalleryWalk[]> {
-  const token = process.env.ARENA_SERVICE_TOKEN;
   const channel = process.env.ARENA_WALKS_CHANNEL;
-  if (!token || !channel) return [];
+  if (!channel) return [];
 
   const res = await arenaFetch<ContentsResponse>(
     `/channels/${encodeURIComponent(channel)}/contents?per=100&sort=created_at_desc`,
-    token
+    null
   );
 
   const walks: GalleryWalk[] = [];
@@ -74,12 +73,9 @@ export async function fetchWalks(): Promise<GalleryWalk[]> {
 }
 
 export async function getWalk(id: number): Promise<GalleryWalk | null> {
-  const token = process.env.ARENA_SERVICE_TOKEN;
-  if (!token) return null;
-
   let block: WalkBlock;
   try {
-    block = await arenaFetch<WalkBlock>(`/blocks/${id}`, token);
+    block = await arenaFetch<WalkBlock>(`/blocks/${id}`, null);
   } catch {
     return null;
   }
