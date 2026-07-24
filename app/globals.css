@@ -96,12 +96,12 @@ main {
 .button {
   display: inline-block;
   font-family: var(--font-sans);
-  font-size: var(--font-size-4);
+  font-size: var(--font-size-3);
   background: var(--foreground);
   color: var(--background);
   border: none;
   border-radius: 0;
-  padding: var(--space-2) var(--space-6);
+  padding: var(--space-1) var(--space-4);
   cursor: pointer;
   text-decoration: none !important;
 }

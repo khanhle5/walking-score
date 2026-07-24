@@ -18,12 +18,17 @@ function Tile({
   onToggle: () => void;
 }) {
   const points = useMemo(() => toTimedPoints(walk), [walk]);
+  // Blocks are titled "<given title> (123m)", falling back to "Walk — <date>
+  // (123m)". Show only given titles; the caption already has the distance.
+  const title = walk.title.replace(/ \(\d+m\)$/, "");
+  const hasTitle = title !== "" && !/^Walk — \d{4}-\d{2}-\d{2}$/.test(title);
   return (
     <figure className="tile">
       <Link href={`/walk/${walk.id}`}>
         <ScoreCanvas points={points} performance={performance} className="tile-canvas" />
       </Link>
       <figcaption className="label">
+        {hasTitle && <div>{title}</div>}
         <a href={walk.url} target="_blank" rel="noreferrer">
           {walk.walker}
         </a>
