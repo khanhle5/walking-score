@@ -27,8 +27,9 @@ configuration; a GitHub link alone does not provide OAuth credentials.
    | `ARENA_WALKS_CHANNEL` | ID or slug of the public, open channel to which walks should be posted |
 
    The first two are required for sign-in. The channel is also required to save
-   walks and show the gallery. Create or choose a channel where signed-in users
-   can post. Do not commit credentials or share the client secret in chat.
+   walks and show the gallery. Use only the channel slug or numeric ID, not its
+   full URL. Create or choose a channel where signed-in users can post. Do not
+   commit credentials or share the client secret in chat.
 3. **Redeploy the production deployment** after saving the variables: changes to
    Vercel environment variables do not update an existing deployment. Then visit
    `https://walking-score-a.vercel.app/api/auth/login`, authorize the app, and
@@ -62,3 +63,14 @@ Open `https://localhost:3000`. The dev script uses Next.js experimental HTTPS;
 you may need to trust its local certificate. Geolocation testing on a phone
 requires an HTTPS host reachable from the phone. Run `yarn lint` and `yarn build`
 to check changes.
+
+## Gallery and channel visibility
+
+The gallery shows walks created by this app, not every image or block in the
+channel. It redraws their saved point metadata. The first 100 channel items are
+read on each page request. Public channels can be read without signing in; for
+private channels the server uses the current viewer's Are.na token, so only
+users with access can see those walks. Opening a private channel to everyone
+can expose its existing contents; use a separate open channel for a public
+community gallery. Changes to channel visibility and permissions are managed
+on Are.na, not by this app.

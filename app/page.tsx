@@ -28,10 +28,12 @@ export default async function Home({
   const canRecord = isMobile || process.env.NODE_ENV === "development";
 
   let walks: GalleryWalk[] = [];
+  let galleryError = false;
   try {
-    walks = await fetchWalks();
+    // Only use a verified session; signed-out visitors can still see public walks.
+    walks = await fetchWalks(name ? token : null);
   } catch {
-    // Gallery is decorative — the page works without it.
+    galleryError = true;
   }
 
   return (
@@ -81,7 +83,16 @@ export default async function Home({
           phone to record a walk.
         </p>
       )}
-      <WalkGallery walks={walks} />
+      {galleryError ? (
+        <p className="label copy" role="status">
+          Could not load walks from Are.na. Check the channel and your access,
+          then try again.
+        </p>
+      ) : walks.length === 0 ? (
+        <p className="label copy">No walks to show yet.</p>
+      ) : (
+        <WalkGallery walks={walks} />
+      )}
     </main>
   );
 }
