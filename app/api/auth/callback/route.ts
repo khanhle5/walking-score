@@ -16,25 +16,45 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/?error=auth", url.origin));
   }
 
-  const res = await fetch(ARENA_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: process.env.ARENA_CLIENT_ID ?? "",
-      client_secret: process.env.ARENA_CLIENT_SECRET ?? "",
-      code,
-      redirect_uri: `${url.origin}/api/auth/callback`,
-    }),
-  });
-
-  if (!res.ok) {
-    console.error("Token exchange failed:", res.status, await res.text());
+  const clientId = process.env.ARENA_CLIENT_ID;
+  const clientSecret = process.env.ARENA_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error("Are.na OAuth credentials are not configured");
     return NextResponse.redirect(new URL("/?error=auth", url.origin));
   }
 
-  const { access_token } = (await res.json()) as { access_token: string };
-  await setToken(access_token);
+  try {
+    const res = await fetch(ARENA_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: `${url.origin}/api/auth/callback`,
+      }),
+    });
+
+    if (!res.ok) {
+      // Do not log the response body: it could contain sensitive data.
+      console.error("Are.na token exchange failed:", res.status);
+      return NextResponse.redirect(new URL("/?error=auth", url.origin));
+    }
+
+    const data: unknown = await res.json();
+    if (
+      !data || typeof data !== "object" || !("access_token" in data) ||
+      typeof data.access_token !== "string" || !data.access_token
+    ) {
+      console.error("Are.na token exchange returned no access token");
+      return NextResponse.redirect(new URL("/?error=auth", url.origin));
+    }
+    await setToken(data.access_token);
+  } catch {
+    console.error("Are.na token exchange could not be completed");
+    return NextResponse.redirect(new URL("/?error=auth", url.origin));
+  }
 
   return NextResponse.redirect(new URL("/walk", url.origin));
 }
