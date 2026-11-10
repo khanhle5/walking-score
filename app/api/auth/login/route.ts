@@ -11,6 +11,13 @@ export async function GET(request: Request) {
     );
   }
 
+  if (!process.env.ARENA_CLIENT_SECRET) {
+    return NextResponse.json(
+      { error: "ARENA_CLIENT_SECRET is not set — see .env.example" },
+      { status: 500 }
+    );
+  }
+
   const origin = new URL(request.url).origin;
   const state = crypto.randomUUID();
 

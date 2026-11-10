@@ -6,7 +6,12 @@ import { getToken } from "@/lib/session";
 import { fetchWalks, type GalleryWalk } from "@/lib/walks";
 import WalkGallery from "./walk-gallery";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const authError = (await searchParams).error === "auth";
   const token = await getToken();
   let name: string | null = null;
   if (token) {
@@ -55,6 +60,11 @@ export default async function Home() {
         For the community element of this year&rsquo;s edition, we&rsquo;d like
         you to take a walk. The route you take will become a score.
       </p>
+      {authError && !name && (
+        <p className="copy" role="alert">
+          Sign-in was not completed. Please try again.
+        </p>
+      )}
       {!name && (
         <a className="button" href="/api/auth/login">
           Sign in with Are.na to add your score
