@@ -119,8 +119,9 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 ## Architecture
 
 - `app/` — Next.js App Router.
-  - `/` — landing: what this is, sign-in button, and the gallery (shown to
-    everyone): `lib/walks.ts` reads the channel server-side (anonymously) and
+  - `/` — landing: what this is, sign-in button, and the gallery:
+    `lib/walks.ts` reads the channel server-side with the viewer’s Are.na token
+    when signed in, or anonymously otherwise, and
     rebuilds every walk from block metadata; `app/walk-gallery.tsx` redraws each
     score from decoded points and plays them (one at a time). Walks without a
     `times_*` stream play at uniform pace. Currently reads one page (100 most
@@ -144,9 +145,10 @@ We own both encoder and decoder, so this is just a spec detail — documented in
   sends it (plus the encoded point/time streams) to our server, which presigns,
   PUTs to S3, and creates the block **with the walker's own OAuth token**, so
   blocks are authored by the walker. Channel reads (`lib/walks.ts` — the
-  gallery and per-walk pages) are anonymous: public resources need no auth, so
-  there is no service token. The `walker` metadata key + a description line
-  still credit the walker.
+  gallery and per-walk pages) use the viewer’s token when signed in and remain
+  anonymous for signed-out visitors. Private channels therefore remain visible
+  only to authorized viewers; there is no service token or shared fetch cache.
+  The `walker` metadata key + a description line still credit the walker.
 
 ## Privacy
 
