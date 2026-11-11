@@ -74,3 +74,29 @@ users with access can see those walks. Opening a private channel to everyone
 can expose its existing contents; use a separate open channel for a public
 community gallery. Changes to channel visibility and permissions are managed
 on Are.na, not by this app.
+
+## Save a walk to Mindstamps
+
+Each gallery score has a **Lưu sang Memory** button. The visitor signs in
+separately with their Mindstamps Firebase account, enters a place and coordinates
+manually, and explicitly confirms what will be shared. The app creates a
+Mindstamps-compatible Firestore memory with the complete walk title, a PNG of
+its score, date, distance, duration and Are.na block link. It does not transfer
+raw GPS or infer the walk's location. Are.na links may point to private blocks
+that other people cannot open.
+
+The public Firebase web configuration defaults to the values in the
+[Mindstamps source](https://github.com/khanhle5/Mindstamps/blob/main/src/config/firebase.js).
+Before enabling this in production, verify that `zofovn.vercel.app` uses that
+same Firebase project; if it overrides those defaults, set all four
+`NEXT_PUBLIC_MINDSTAMPS_*` variables from `.env.example` to the deployed app's
+**web** configuration and rebuild. These values are public; never use an admin
+or service-account key. Enable the desired Firebase Authentication providers and
+add the Walking Score hostname to the Firebase Authentication authorized domains
+for Google login. Firebase sessions are separate between the two websites.
+
+The Mindstamps repository's Firestore rules allow public reads of memories. The
+confirmation dialog warns that the title, score image, details, link and manually
+entered location may be public. Verify the deployed rules independently; this
+integration does not change Mindstamps or its access policies. To test, use a
+Mindstamps test account and explicitly save a test walk, then check its Journal.
