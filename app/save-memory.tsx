@@ -15,6 +15,8 @@ import { addDoc, collection } from "firebase/firestore";
 import { mindstampsAuth, mindstampsConfigValid, mindstampsDb } from "@/lib/mindstamps";
 import { memoryFields, parseMemoryLocation } from "@/lib/memory";
 import { drawScore } from "@/lib/render";
+import LocationPicker from "./location-picker";
+import type { MapPoint } from "@/lib/location-picker";
 import { toTimedPoints } from "@/lib/timed-points";
 import type { GalleryWalk } from "@/lib/walks";
 
@@ -50,8 +52,7 @@ export default function SaveMemory({ walk, onClose }: { walk: GalleryWalk; onClo
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [place, setPlace] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [point, setPoint] = useState<MapPoint | null>(null);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(mindstampsConfigValid ? "" : "Cấu hình Mindstamps chưa đầy đủ. Vui lòng kiểm tra bốn biến Firebase web.");
@@ -92,11 +93,11 @@ export default function SaveMemory({ walk, onClose }: { walk: GalleryWalk; onClo
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user || !consent || busy) return;
+    if (!user || !consent || busy || !point) return;
     setError("");
     setBusy(true);
     try {
-      const location = parseMemoryLocation(lat, lng, place);
+      const location = parseMemoryLocation(String(point.lat), String(point.lng), place);
       const imageData = scoreDataUrl(walk);
       const result = await addDoc(collection(mindstampsDb, "memories"), memoryFields(walk, location, imageData, user.uid));
       setMemoryId(result.id);
@@ -127,13 +128,11 @@ export default function SaveMemory({ walk, onClose }: { walk: GalleryWalk; onClo
         {!memoryId && user && (
           <form className="memory-form" onSubmit={save}>
             <p className="label">Mindstamps: {user.email || user.displayName || "Đã đăng nhập"} · <button type="button" className="tile-play" disabled={busy} onClick={() => void signOut(mindstampsAuth).catch(() => setError("Không thể đổi tài khoản. Hãy thử lại."))}>Đổi tài khoản</button></p>
-            <p>Nhập một vị trí bạn chọn. Walking Score không lưu tọa độ thật và không thể tự xác định vị trí chuyến đi.</p>
-            <label>Tên địa điểm<input className="input" value={place} onChange={(e) => setPlace(e.target.value)} maxLength={200} required /></label>
-            <label>Vĩ độ<input className="input" type="number" inputMode="decimal" step="any" min="-90" max="90" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Ví dụ: 10.7769" required /></label>
-            <label>Kinh độ<input className="input" type="number" inputMode="decimal" step="any" min="-180" max="180" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Ví dụ: 106.7009" required /></label>
-            <p className="label">Bạn có thể lấy vĩ độ, kinh độ từ ứng dụng bản đồ; không nhập vị trí nếu bạn không muốn chia sẻ.</p>
-            <label className="memory-consent"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required /> <span>Tôi đồng ý chia sẻ tiêu đề, hình tuyến đường, ngày, quãng đường, thời gian, liên kết Are.na và vị trí đã nhập. Memory có thể được đọc công khai trên Mindstamps.</span></label>
-            <button className="button" type="submit" disabled={busy || !consent}>{busy ? "Đang lưu…" : "Xác nhận lưu Memory"}</button>
+            <p>Chọn vị trí bạn muốn chia sẻ. Walking Score không lưu tọa độ GPS của chuyến đi và không tự xác định vị trí chuyến đi.</p>
+            <LocationPicker point={point} disabled={busy} onSelect={(selected, name) => { setPoint(selected); setPlace(name); }} />
+            <label>Tên địa điểm<input className="input" value={place} onChange={(e) => setPlace(e.target.value)} maxLength={200} disabled={busy} required /></label>
+            <label className="memory-consent"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required /> <span>Tôi đồng ý chia sẻ tiêu đề, hình tuyến đường, ngày, quãng đường, thời gian, liên kết Are.na và vị trí đã chọn. Memory có thể được đọc công khai trên Mindstamps.</span></label>
+            <button className="button" type="submit" disabled={busy || !consent || !point || !place.trim()}>{busy ? "Đang lưu…" : "Xác nhận lưu Memory"}</button>
           </form>
         )}
         {error && <p role="alert" className="memory-error">{error}</p>}

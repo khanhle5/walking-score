@@ -37,14 +37,16 @@ its notation.
   values; regenerate after updating the package. Light theme only: the score is a
   black line on white and the site follows. Headings are normal weight (Are.na
   convention).
-- **No absolute location is ever stored — space and time are both normalized.**
+- **No absolute walk GPS is stored — space and time are both normalized.**
   GPS is used live to draw the line, but before saving, points are converted to
   (x, y) offsets in meters from the walk's first fix, north-up, and each point's
   time is seconds from that first fix. Every walk lives in the same abstract frame
   starting at (0, 0) and t=0 — shape, scale, distance, and rhythm (where you
   lingered or hurried) survive; where on Earth and when on the clock do not
-  (only `started_at` carries calendar time, like a date on a drawing). Raw lat/lng
-  never leaves the device.
+  (only `started_at` carries calendar time, like a date on a drawing). Raw walk GPS lat/lng
+  never leaves the device. The separate, optional Mindstamps export stores only
+  a location the visitor explicitly selects and confirms; it is not derived from
+  the walk and may be public.
 
 ## Are.na API (v3) — what this app uses
 
@@ -152,8 +154,8 @@ We own both encoder and decoder, so this is just a spec detail — documented in
 
 ## Privacy
 
-Solved structurally rather than with warnings: absolute coordinates are never
-persisted anywhere (see decision above) — metadata contains only start-relative meter
+Solved structurally rather than with warnings: absolute walk coordinates are never
+persisted in the walk (see decision above) — metadata contains only start-relative meter
 offsets, so there is no location data to leak. The person still previews the rendered
 score and explicitly confirms before anything uploads. Residual (accepted) risk: a
 sufficiently distinctive route shape could in principle be matched against street
