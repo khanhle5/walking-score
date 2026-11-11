@@ -8,17 +8,25 @@ import { toTimedPoints } from "@/lib/timed-points";
 import type { GalleryWalk } from "@/lib/walks";
 import ScoreCanvas from "./score-canvas";
 import dynamic from "next/dynamic";
+import { onAuthStateChanged } from "firebase/auth";
+import { mindstampsAuth, mindstampsConfigValid } from "@/lib/mindstamps";
+import { memoryUrl, type MemoryLinks } from "@/lib/memory-links";
 
+const FindMemories = dynamic(() => import("./find-memories"), { ssr: false });
 const SaveMemory = dynamic(() => import("./save-memory"), { ssr: false });
 
 function Tile({
   walk,
   performance,
   onToggle,
+  memoryIds,
+  onSaved,
 }: {
   walk: GalleryWalk;
   performance: Performance | null;
   onToggle: () => void;
+  memoryIds: string[];
+  onSaved: (uid: string, id: string) => void;
 }) {
   const points = useMemo(() => toTimedPoints(walk), [walk]);
   const [savingMemory, setSavingMemory] = useState(false);
@@ -42,14 +50,19 @@ function Tile({
         <button className="tile-play" onClick={onToggle}>
           {performance ? "stop" : "play"}
         </button>
+        {memoryIds.map((id, index) => <div key={id}><a className="tile-memory tile-memory-link" href={memoryUrl(id)} target="_blank" rel="noreferrer">Xem bên Memory{memoryIds.length > 1 ? ` ${index + 1}` : ""} ↗</a></div>)}
         <div><button className="tile-memory" type="button" onClick={() => setSavingMemory(true)}>Lưu sang Memory</button></div>
       </figcaption>
-      {savingMemory && <SaveMemory walk={walk} onClose={() => setSavingMemory(false)} />}
+      {savingMemory && <SaveMemory walk={walk} onSaved={onSaved} onClose={() => setSavingMemory(false)} />}
     </figure>
   );
 }
 
 export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
+  const [findingMemories, setFindingMemories] = useState(false);
+  const [memoryLinks, setMemoryLinks] = useState<MemoryLinks>({});
+  const [lookupMessage, setLookupMessage] = useState("");
+  const ownerRef = useRef<string | null>(null);
   const [playing, setPlaying] = useState<{ id: number; performance: Performance } | null>(null);
   const playingRef = useRef<Performance | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -61,6 +74,17 @@ export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
     timeoutRef.current = null;
     setPlaying(null);
   };
+
+  useEffect(() => {
+    if (!mindstampsConfigValid) return;
+    return onAuthStateChanged(mindstampsAuth, (user) => {
+      if (ownerRef.current && ownerRef.current !== user?.uid) {
+        ownerRef.current = null;
+        setMemoryLinks({});
+        setLookupMessage("");
+      }
+    });
+  }, []);
 
   // Stop audio on unmount.
   useEffect(() => stopAll, []);
@@ -79,15 +103,37 @@ export default function WalkGallery({ walks }: { walks: GalleryWalk[] }) {
   };
 
   return (
-    <section className="gallery">
+    <>
+      <div className="memory-lookup label">
+        <button className="tile-memory" type="button" onClick={() => setFindingMemories(true)}>Tìm Memory đã lưu</button>
+        {lookupMessage && <p role="status">{lookupMessage}</p>}
+      </div>
+      {findingMemories && <FindMemories walks={walks} onClose={() => setFindingMemories(false)} onFound={(uid, links) => {
+        ownerRef.current = uid;
+        setMemoryLinks(links);
+        const count = Object.values(links).reduce((total, ids) => total + ids.length, 0);
+        setLookupMessage(count ? `Đã tìm thấy ${count} Memory cho các chuyến đi đang hiển thị.` : "Không tìm thấy Memory tương ứng trong tài khoản này.");
+      }} />}
+      <section className="gallery">
       {walks.map((walk) => (
         <Tile
           key={walk.id}
           walk={walk}
           performance={playing?.id === walk.id ? playing.performance : null}
           onToggle={() => toggle(walk)}
+          memoryIds={memoryLinks[walk.id] || []}
+          onSaved={(uid, id) => {
+            const sameOwner = ownerRef.current === uid;
+            ownerRef.current = uid;
+            setLookupMessage("");
+            setMemoryLinks((previous) => {
+              const links = sameOwner ? previous : {};
+              return { ...links, [walk.id]: [...new Set([...(links[walk.id] || []), id])] };
+            });
+          }}
         />
       ))}
-    </section>
+      </section>
+    </>
   );
 }

@@ -223,3 +223,8 @@ main {
 .location-results { list-style: none; padding: 0; margin: 0; border: 1px solid var(--gray3); }
 .location-results button { width: 100%; padding: var(--space-2); text-align: left; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .location-results button:hover, .location-results button:focus-visible { background: #eee; }
+
+.memory-lookup { width: 100%; max-width: 720px; margin-top: var(--space-4); }
+.memory-lookup + .gallery { margin-top: var(--space-3); }
+.tile-memory-link { display: inline-block; text-decoration: none; }
+.tile-memory-link:hover, .tile-memory-link:focus-visible { text-decoration: underline; }

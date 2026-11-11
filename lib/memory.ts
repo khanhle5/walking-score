@@ -23,6 +23,7 @@ export function memoryFields(walk: GalleryWalk, location: ReturnType<typeof pars
       `Are.na: ${walk.url}`,
     ].join("\n"),
     location,
+    walkingScoreUrl: walk.url,
     imageData,
     imageType: "photo",
     videoUrl: null,
