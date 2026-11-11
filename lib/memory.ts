@@ -4,7 +4,7 @@ import { formatDistance, formatDuration } from "./format";
 // Only the viewer-provided place is stored; Walking Score has no absolute GPS.
 export function parseMemoryLocation(latText: string, lngText: string, name: string) {
   if (!latText.trim() || !lngText.trim() || !name.trim()) {
-    throw new Error("Hãy nhập tên địa điểm, vĩ độ và kinh độ.");
+    throw new Error("Hãy chọn điểm trên bản đồ và nhập tên địa điểm.");
   }
   const lat = Number(latText);
   const lng = Number(lngText);

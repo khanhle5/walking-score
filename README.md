@@ -78,8 +78,8 @@ on Are.na, not by this app.
 ## Save a walk to Mindstamps
 
 Each gallery score has a **Lưu sang Memory** button. The visitor signs in
-separately with their Mindstamps Firebase account, enters a place and coordinates
-manually, and explicitly confirms what will be shared. The app creates a
+separately with their Mindstamps Firebase account, chooses a point on a Mapbox
+map and names it, and explicitly confirms what will be shared. The app creates a
 Mindstamps-compatible Firestore memory with the complete walk title, a PNG of
 its score, date, distance, duration and Are.na block link. It does not transfer
 raw GPS or infer the walk's location. Are.na links may point to private blocks
@@ -97,6 +97,30 @@ for Google login. Firebase sessions are separate between the two websites.
 
 The Mindstamps repository's Firestore rules allow public reads of memories. The
 confirmation dialog warns that the title, score image, details, link and manually
-entered location may be public. Verify the deployed rules independently; this
+selected location may be public. Verify the deployed rules independently; this
 integration does not change Mindstamps or its access policies. To test, use a
 Mindstamps test account and explicitly save a test walk, then check its Journal.
+
+### Mapbox location picker
+
+Set `NEXT_PUBLIC_MAPBOX_TOKEN` to a **public** Mapbox browser token (`pk.*`)
+in `.env.local` or the appropriate Vercel environments. You can use the public
+`VITE_MAPBOX_TOKEN` from the Mindstamps deployment, provided its URL restrictions
+also allow the Walking Score host. Optionally set `NEXT_PUBLIC_MAPBOX_STYLE` to a
+style accessible to that token; the default is Mapbox Streets v12. Public Next.js
+environment variables are embedded during build: redeploy after changing them.
+Without a token the picker explains the missing configuration and saving is
+disabled. Never put a secret (`sk.*`) token in a `NEXT_PUBLIC_` variable.
+
+The map starts at a generic world view, never uses GPS or infers the walk's
+location. A visitor can click the map (or move it with the keyboard and choose
+its center) and type a name without searching. Map tiles and optional search
+queries are sent to Mapbox. Search uses the Mapbox Geocoding v6 API with
+`permanent=true` because a selected result can be stored in Firestore. Mapbox
+requires an eligible account (such as a valid credit card or enterprise
+agreement) for permanent geocoding; usage may incur charges. See the
+[Mapbox geocoding documentation](https://docs.mapbox.com/api/search/geocoding/)
+and pricing before enabling it. If search is unavailable, users can still pick
+a point on a working map and enter the name themselves. The selected location
+is deliberately saved to Mindstamps only after the visitor confirms, and may be
+public; the Are.na walk remains location-normalized.
