@@ -35,6 +35,7 @@ test("memory uses exact walk title and only manually chosen coordinates", () => 
   assert.match(doc.story, /https:\/\/www.are.na\/block\/42/);
   assert.equal(doc.imageType, "photo");
   assert.equal(doc.userId, "firebase-user");
+  assert.equal(doc.walkingScoreUrl, walk.url);
   assert(doc.createdAt instanceof Date);
   assert.equal("points" in doc, false);
   assert.equal("times" in doc, false);

@@ -45,7 +45,7 @@ function authError(error: unknown) {
   return "Không thể đăng nhập Mindstamps. Hãy kiểm tra tài khoản và thử lại.";
 }
 
-export default function SaveMemory({ walk, onClose }: { walk: GalleryWalk; onClose: () => void }) {
+export default function SaveMemory({ walk, onClose, onSaved }: { walk: GalleryWalk; onClose: () => void; onSaved: (uid: string, id: string) => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -101,6 +101,7 @@ export default function SaveMemory({ walk, onClose }: { walk: GalleryWalk; onClo
       const imageData = scoreDataUrl(walk);
       const result = await addDoc(collection(mindstampsDb, "memories"), memoryFields(walk, location, imageData, user.uid));
       setMemoryId(result.id);
+      if (mindstampsAuth.currentUser?.uid === user.uid) onSaved(user.uid, result.id);
     } catch (err) {
       if (err instanceof Error && !((err as { code?: string }).code)) setError(err.message);
       else setError("Không thể xác nhận Memory đã được lưu. Kiểm tra kết nối và Journal trước khi thử lại để tránh lưu trùng.");

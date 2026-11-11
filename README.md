@@ -124,3 +124,18 @@ and pricing before enabling it. If search is unavailable, users can still pick
 a point on a working map and enter the name themselves. The selected location
 is deliberately saved to Mindstamps only after the visitor confirms, and may be
 public; the Are.na walk remains location-normalized.
+
+### Find previously saved memories
+
+After a successful export, the gallery shows **Xem bên Memory** for that walk.
+To find older exports after reloading or on another device, use **Tìm Memory
+đã lưu**, sign in to the same Mindstamps account, and choose to search. This
+reads that account's memories in pages (including images, which may take time
+and incur Firestore reads) and matches the exact Are.na URL. Old exports are
+matched using the `Are.na:` line in their story; if it has been removed or
+changed, they cannot be matched automatically. New exports also carry a
+`walkingScoreUrl` field so editing the story won't break the link. Matches
+are kept only in the current page session, are cleared on account changes,
+and may include multiple memories per walk. A deleted memory requires a fresh
+search to update the links. Opening a link may require signing in to Mindstamps
+separately.
