@@ -184,3 +184,33 @@ main {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.tile-memory {
+  font: inherit;
+  font-variation-settings: inherit;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--gray3);
+  padding: var(--space-1) var(--space-2);
+  margin-top: var(--space-2);
+  cursor: pointer;
+}
+
+.memory-dialog {
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--gray3);
+  color: var(--foreground);
+  background: var(--background);
+  width: min(92vw, 480px);
+  max-height: 90dvh;
+}
+
+.memory-dialog::backdrop { background: rgb(0 0 0 / 50%); }
+.memory-panel, .memory-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.memory-panel { padding: var(--space-4); text-align: left; }
+.memory-form label:not(.memory-consent) { display: flex; flex-direction: column; gap: var(--space-1); }
+.memory-form .input { width: 100%; text-align: left; }
+.memory-consent { display: flex; align-items: flex-start; gap: var(--space-2); }
+.memory-consent input { margin-top: 0.4em; flex-shrink: 0; }
+.memory-error { color: #a42318; }

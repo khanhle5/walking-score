@@ -7,6 +7,9 @@ import { playWalk, type Performance } from "@/lib/sonify";
 import { toTimedPoints } from "@/lib/timed-points";
 import type { GalleryWalk } from "@/lib/walks";
 import ScoreCanvas from "./score-canvas";
+import dynamic from "next/dynamic";
+
+const SaveMemory = dynamic(() => import("./save-memory"), { ssr: false });
 
 function Tile({
   walk,
@@ -18,6 +21,7 @@ function Tile({
   onToggle: () => void;
 }) {
   const points = useMemo(() => toTimedPoints(walk), [walk]);
+  const [savingMemory, setSavingMemory] = useState(false);
   // Blocks are titled "<given title> (123m)", falling back to "Walk — <date>
   // (123m)". Show only given titles; the caption already has the distance.
   const title = walk.title.replace(/ \(\d+m\)$/, "");
@@ -38,7 +42,9 @@ function Tile({
         <button className="tile-play" onClick={onToggle}>
           {performance ? "stop" : "play"}
         </button>
+        <div><button className="tile-memory" type="button" onClick={() => setSavingMemory(true)}>Lưu sang Memory</button></div>
       </figcaption>
+      {savingMemory && <SaveMemory walk={walk} onClose={() => setSavingMemory(false)} />}
     </figure>
   );
 }
